@@ -1,0 +1,182 @@
+package com.simplex.mario_simplex.backend;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class SimplexSolver {
+    // we will be trying to build a simplex method calculator for the Operation research Lab
+    // Ideas
+    // the input format will be as follows
+    // Matrix of Constraints m x n , m--> number of constraints, n--> number of variables
+    // vector of results b 1 x m , carrying the solution for each constraints
+    
+    
+    // z --> size and A matrix size will depend on the variables
+    // 1--- if there is an unrestricted variable Xo we will swap it with Xo_1 and Xo_2 such that Xo_1 and Xo_2 >=0
+    // 2--- we read in every contraint in m constraints if we find <= then we are OK
+    // if we find >= we multiple all by -1
+    // if we fint = we swap it with 2 constraints >= and <= 
+    // which will be <= * -1 & <=
+    // i think in every constraint we will need a refrence to the variable restriction so that
+    // when we encounter >=0 we continue normally and when we find unrestricted we swap it with 2 inside the constraint
+    // we will then need to form the matrix that includes the slacks
+
+    private enum Type{
+        MAX,
+        MIN
+    }
+    protected Map<String, String> variable_inequalities;
+    protected Map<String, Integer> variable_indeces;
+    private final ArrayList<constraint> constraints;
+    private Type problem_Type;
+    private double[][] operation_Matrix;
+    private String objective_function;
+    private double[] objective_function_arr;
+    private double[] result_arr;
+    private final  Set<String> unrestricted_token;
+
+    public SimplexSolver(String variable_inequalities){
+        this.constraints = new ArrayList<>();
+        this.variable_inequalities = new HashMap<>();
+        this.problem_Type = Type.MAX;
+        this.unrestricted_token = new HashSet<>();
+        this.variable_indeces = new HashMap<>();
+        parse_variable_inequalities(variable_inequalities);
+    }
+    public void addConstraint(constraint constrain){
+        this.constraints.add(constrain);
+        constrain.set_simplex(this);
+    }
+  
+    public void show_constraints() throws Exception{
+        for(constraint x : constraints){
+            System.out.println(x.form_constraint_equations());
+        }
+        System.out.println(this.variable_inequalities);
+    }
+    public void objective_function(String ObjFunction,boolean type){
+        this.objective_function = ObjFunction;
+        if(!type) this.problem_Type = Type.MIN;
+        parse_objective_function();
+    }
+
+
+    protected Map<String,String> get_variable_inequalities(){
+        return this.variable_inequalities;
+    }
+
+    private void  parse_variable_inequalities(String var_inequalities){
+        var_inequalities = var_inequalities.replaceAll(" ", "");
+        String[] splitted_details = var_inequalities.split(",");
+        Pattern pattern = Pattern.compile("^(x\\d+)(=|>=|<=)(\\d+)$");
+        Matcher matcher;
+        for(String var : splitted_details){
+            matcher = pattern.matcher(var);
+            if(matcher.find()){
+                this.variable_inequalities.put(matcher.group(1), matcher.group(2));
+            }
+        }
+        System.out.println(this.variable_inequalities);
+    }
+
+    private  void parse_objective_function(){
+        this.objective_function = this.objective_function.replaceAll(" ","");
+        Pattern pattern = Pattern.compile("([+-]?\\d*\\.?\\d*)(x(\\d+))?");
+        Matcher matcher;
+        HashMap<String,String> temp = new HashMap<>(this.variable_inequalities);
+        int number_of_variables=0;
+        for(Map.Entry<String,String> entry : temp.entrySet()){
+            String Key = entry.getKey();
+            String inequality = entry.getValue();
+
+            if(inequality.equalsIgnoreCase("=")){
+                number_of_variables++;
+                this.variable_inequalities.remove(Key);
+                this.variable_inequalities.put(Key+"_0", ">=");
+                this.variable_inequalities.put(Key+"_1", ">=");
+                unrestricted_token.add(Key);
+            }
+            number_of_variables++;
+        }
+
+        String[] splitted_objective = this.objective_function.split("\\+");
+        this.objective_function_arr = new double[number_of_variables];
+        int offset = 0;
+        for(String var : splitted_objective){
+            matcher = pattern.matcher(var);
+            if(matcher.find()){
+                int initial_index = Integer.parseInt(matcher.group(3));
+
+                if(unrestricted_token.contains(matcher.group(2))){
+                    this.objective_function_arr[initial_index-1 + offset] = Double.parseDouble(matcher.group(1));
+                    variable_indeces.put(matcher.group(2)+"_0",initial_index-1 + offset);
+                    this.objective_function_arr[initial_index + offset] = Double.parseDouble(matcher.group(1)) *-1.0;
+                    variable_indeces.put(matcher.group(2)+"_1",initial_index+ offset);
+                    offset++;
+                }else{
+                    this.objective_function_arr[initial_index -1 + offset] = Double.parseDouble(matcher.group(1));
+                    variable_indeces.put(matcher.group(2),initial_index-1 + offset);
+                }
+            }
+        }
+        for(double i : this.objective_function_arr){
+            System.out.println(i);
+        }
+        
+    }
+
+    public void show_sorted() throws Exception{
+        this.variable_inequalities = new TreeMap<>(this.variable_inequalities);
+        System.out.println(this.variable_inequalities);
+        for(constraint i : constraints){
+            System.out.println(i.form_constraint_equations());
+        }
+    }
+
+    public void matrix_form() throws Exception{
+        ArrayList<Map<String,Double>> rows = new ArrayList<>();
+
+        for(constraint i : constraints){
+            List<Map<String,Double>> holder = i.form_constraint_equations();
+            rows.addAll(holder);
+        }
+        int constrains = rows.size(); // m
+        int variables = this.variable_indeces.size(); // n 
+        System.out.println(this.variable_indeces);
+        this.operation_Matrix = new double[constrains][variables];
+        this.result_arr = new double[constrains];
+        int index = 0;
+        for(Map<String,Double> row : rows){
+
+            for (Map.Entry<String, Double> entry : row.entrySet()) {
+                String key = entry.getKey();
+                Double value = entry.getValue();
+                
+                if(!key.equalsIgnoreCase("b")){
+                    int inner_index = this.variable_indeces.get(key);
+                    this.operation_Matrix[index][inner_index] = value;
+                }
+                else
+                    this.result_arr[index] = value;
+            }
+            index++;
+        }
+        for(double[] r : this.operation_Matrix){
+            for(double i : r){
+                System.out.print(i+" ");
+            }
+            System.out.println();
+        }
+        for(double i : this.result_arr){
+            System.out.print(i+" ");
+        }
+    }
+
+}
