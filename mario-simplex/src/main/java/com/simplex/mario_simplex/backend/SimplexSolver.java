@@ -1,6 +1,7 @@
 package com.simplex.mario_simplex.backend;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,14 +49,14 @@ public class SimplexSolver {
   protected int S = 0;
   protected int E = 0;
   protected int A = 0;
-  private final ArrayList<constraint> constraints;
+  protected  ArrayList<constraint> constraints;
   protected Type problem_Type;
   protected Method method;
   protected double[][] operation_Matrix;
   private String objective_function;
   protected double[] objective_function_arr;
   protected double[] result_arr;
-  private final Set<String> unrestricted_token;
+  private Set<String> unrestricted_token;
   protected String[] basic_variables;
   protected double[] z_row;
 
@@ -68,6 +69,20 @@ public class SimplexSolver {
     this.variable_indeces = new HashMap<>();
     parse_variable_inequalities(variable_inequalities);
   }
+  public SimplexSolver() {
+  }
+  protected StandardSimplexSolver get_child(double[] objFunction,double[] z_row){
+      StandardSimplexSolver child_solver = new StandardSimplexSolver();
+      child_solver.operation_Matrix = this.operation_Matrix;
+      child_solver.basic_variables = this.basic_variables;
+      child_solver.result_arr = this.result_arr;
+      child_solver.z_row = z_row;
+      child_solver.variable_indeces = this.variable_indeces;
+      child_solver.objective_function_arr = objFunction;
+      child_solver.constraints = this.constraints;
+      return child_solver;
+  }
+
 
   public void addConstraint(constraint constrain) {
     this.constraints.add(constrain);
@@ -164,7 +179,7 @@ public class SimplexSolver {
     ArrayList<Map<String, Double>> rows = new ArrayList<>();
 
     for (constraint i : constraints) {
-      Map<String, Double> holder = i.form_constraint_equations();
+      Map<String, Double> holder = i.f_hashed_constraint;
       rows.add(holder);
     }
     int constrains = rows.size(); // m
@@ -245,4 +260,70 @@ public class SimplexSolver {
   public double[][] getOperation_Matrix() {
     return this.operation_Matrix;
   }
+  public double[][] solve()throws  Exception{
+    /*
+    if we have artificial variables we make an instanse of standard solver
+    MIN z = Artificial
+    double[][] -->  see basic variables and zero out the below Z
+    // modify stanrdard solver to solve the new double[][]
+    */
+   if(this.method == Method.twoPhase){
+   double[] minimize_phase_one = new double[this.variable_indeces.size()];
+   Arrays.fill(minimize_phase_one, 0);
+    int artifical_variables_count =0;
+   for(Map.Entry<String,Integer> entry : this.variable_indeces.entrySet()){
+      String key = entry.getKey();
+      Integer value = entry.getValue();
+      if(key.contains("A")){
+        minimize_phase_one[value] = -1;
+        artifical_variables_count++;
+      }
+   }
+   StandardSimplexSolver child_solver = get_child(minimize_phase_one,minimize_phase_one);
+   child_solver.solveStandard();
+   double[][] result_mat = child_solver.operation_Matrix;
+   for(double[] x: result_mat){
+    for(double i : x){
+      System.out.print(i+" ");
+    }
+    System.out.println();
+   }
+   double[] result_vec = child_solver.result_arr; 
+   for(double i : result_vec){
+    System.out.print(i+" ");
+   }
+   int rows = this.constraints.size();
+   int columns = this.variable_indeces.size();
+    double[][] phase_two_matrix = new double[rows][columns];
+
+    for(Map.Entry<String,Integer> entry : this.variable_indeces.entrySet()){
+      String key = entry.getKey();
+      Integer index = entry.getValue();
+
+      if(key.contains("A")) continue;
+      for(int i=0;i<rows;i++){
+        phase_two_matrix[i][index] = result_mat[i][index];
+      }
+    }
+    System.out.println();
+    for(double[] x: phase_two_matrix){
+      for(double i : x){
+        System.out.print(i+" ");
+      }
+      System.out.println();
+     }
+     child_solver.z_row = this.z_row;
+     child_solver.operation_Matrix = phase_two_matrix;
+     child_solver.objective_function_arr = this.objective_function_arr;
+     child_solver.solveStandard();
+     double[][] final_mat = child_solver.operation_Matrix;
+     for(double[] x: final_mat){
+      for(double i : x){
+        System.out.print(i+" ");
+      }
+      System.out.println();
+     }
+  }
+  return null;
+  } 
 }
