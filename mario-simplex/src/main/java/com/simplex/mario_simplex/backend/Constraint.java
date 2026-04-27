@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class constraint {
+public class Constraint {
   private String constraint_to_be_parsed; // input constraint that will be received from the user
   private String constraint_type; // Reveals the type meaning is is smaller than or equal | equal | greater than
                                   // or equal
@@ -19,7 +19,7 @@ public class constraint {
   protected Map<String, Double> f_hashed_constraint; // stores the variable and its coeficient so it is easily read
                                                      // inside the simplex solver
 
-  public constraint(String constraint) {
+  public Constraint(String constraint) {
     this.constraint_to_be_parsed = constraint;
     this.used_variables = new HashMap<>();
     this.unrestriced = new HashMap<>();

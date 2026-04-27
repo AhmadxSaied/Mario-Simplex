@@ -15,7 +15,7 @@ export class Results {
     this.isLoading.set(true);
     this.error.set(null);
     this.steps.set(null);
-    const apiUrl = 'http:localhost:8080/api/solve';
+    const apiUrl = 'http://localhost:8080/api/solve';
     this.http.post<SimplexResults[]>(apiUrl, payload).subscribe({
       next: (Response) => {
         this.steps.set(Response);
