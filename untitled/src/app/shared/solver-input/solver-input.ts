@@ -13,9 +13,9 @@ import { Results } from '../../services/Results';
 export class SolverInput {
   private SimplexService = inject(Results);
   isLoading = this.SimplexService.isLoading;
+  variableBounds = signal<string[]>(['>= 0','>= 0']);
   objectiveType = signal<'MAX' | 'MIN'>('MAX');
   numVars = signal<number>(2);
-  ojbectiveFunction = signal<string>("");
   objective = signal<number[]>([0, 0]);
   constraints = signal<{ coefs: number[], sign: string, rhs: number }[]>([
     { coefs: [0, 0], sign: '<=', rhs: 0 }
@@ -43,6 +43,13 @@ export class SolverInput {
         c.coefs.forEach((val, i) => { if (i < newVal) newCoefs[i] = val; });
         return { ...c, coefs: newCoefs };
       }));
+      this.variableBounds.update((current) => {
+        const arr = new Array(newVal).fill('>= 0');
+        current.forEach((val, i) => {
+          if (i < newVal) arr[i] = val;
+        });
+        return arr;
+      });
     }
   }
 
@@ -62,11 +69,16 @@ export class SolverInput {
       const leftSide = this.formateEquations(c.coefs);
       return `${leftSide}${c.sign}${c.rhs}`
     });
+    const boundsList = this.variableBounds().map((bound,index) => {
+      return `x${index+1} ${bound}`
+    });
     const payload: BackendData = {
       objectiveType: this.objectiveType(),
       objectiveFunction: objStr,
-      constraints: constraintsList
+      constraints: constraintsList,
+      bounds:boundsList
     };
+    console.log(payload);
     this.SimplexService.calculateSimplex(payload);
   }
 
