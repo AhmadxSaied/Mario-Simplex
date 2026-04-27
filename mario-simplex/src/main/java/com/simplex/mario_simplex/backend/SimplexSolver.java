@@ -43,23 +43,25 @@ public class SimplexSolver {
     standard
   }
 
-  protected Map<String, String> variable_inequalities;
-  protected Map<String, Integer> variable_indeces;
-  protected List<String> artifical_variables = new ArrayList<>();
-  protected int S = 0;
-  protected int E = 0;
-  protected int A = 0;
-  protected  ArrayList<constraint> constraints;
-  protected Type problem_Type;
-  protected Method method;
-  protected double[][] operation_Matrix;
-  private String objective_function;
-  protected double[] objective_function_arr;
-  protected double[] result_arr;
-  private Set<String> unrestricted_token;
-  protected String[] basic_variables;
+  protected Map<String, String> variable_inequalities; // carries the states of the variables >= | unrestricted
+  protected Map<String, Integer> variable_indeces; // stores the index of each variable in the simplex table
+  protected List<String> artifical_variables = new ArrayList<>(); // stores the artificial variables added to the
+                                                                  // problem
+  protected int S = 0; // slack count
+  protected int E = 0; // surplus count
+  protected int A = 0; // artificial count
+  protected ArrayList<constraint> constraints; // holds all the constraints of the problem
+  protected Type problem_Type; // stores the problem type min or max
+  protected Method method; // hold method type twophase or standard
+  protected double[][] operation_Matrix; // hold the matrix that we will operate on and change
+  private String objective_function; // hold the objective function as a string // will be tokenized
+  protected double[] objective_function_arr; // hold the objective function as a coeffecient array
+  protected double[] result_arr; // hold the z function that is used inside the simplex solver
+  private Set<String> unrestricted_token; // hold the unrestriced variables with state == unrestricted
+  protected String[] basic_variables; // holds what basic variables is inside which row
   protected double[] z_row;
 
+  // we assume that all problems we solve are maximization problems
   public SimplexSolver(String variable_inequalities) {
     this.constraints = new ArrayList<>();
     this.variable_inequalities = new HashMap<>();
@@ -69,26 +71,30 @@ public class SimplexSolver {
     this.variable_indeces = new HashMap<>();
     parse_variable_inequalities(variable_inequalities);
   }
+
   public SimplexSolver() {
   }
-  protected StandardSimplexSolver get_child(double[] objFunction,double[] z_row){
-      StandardSimplexSolver child_solver = new StandardSimplexSolver();
-      child_solver.operation_Matrix = this.operation_Matrix;
-      child_solver.basic_variables = this.basic_variables;
-      child_solver.result_arr = this.result_arr;
-      child_solver.z_row = z_row;
-      child_solver.variable_indeces = this.variable_indeces;
-      child_solver.objective_function_arr = objFunction;
-      child_solver.constraints = this.constraints;
-      return child_solver;
+
+  // we initialize the child solver that will carry calculation for us
+  protected StandardSimplexSolver get_child(double[] objFunction, double[] z_row) {
+    StandardSimplexSolver child_solver = new StandardSimplexSolver();
+    child_solver.operation_Matrix = this.operation_Matrix;
+    child_solver.basic_variables = this.basic_variables;
+    child_solver.result_arr = this.result_arr;
+    child_solver.z_row = z_row;
+    child_solver.variable_indeces = this.variable_indeces;
+    child_solver.objective_function_arr = objFunction;
+    child_solver.constraints = this.constraints;
+    return child_solver;
   }
 
-
+  // we add constraints and assign this solver as the solver of this constraint
   public void addConstraint(constraint constrain) {
     this.constraints.add(constrain);
     constrain.set_simplex(this);
   }
 
+  // prints the constraints wont be used much
   public void show_constraints() throws Exception {
     for (constraint x : constraints) {
       System.out.println(x.form_constraint_equations());
@@ -96,6 +102,7 @@ public class SimplexSolver {
     System.out.println(this.variable_inequalities);
   }
 
+  // takes in the objective function and parsed it based on the problem type
   public void objective_function(String ObjFunction, boolean type) {
     this.objective_function = ObjFunction;
     if (!type)
@@ -107,7 +114,14 @@ public class SimplexSolver {
     return this.variable_inequalities;
   }
 
+  // here we parse the string that holds variables data
+  // x1 >=0 x2<= and we use = (=) as a indicator for unrestriction
   private void parse_variable_inequalities(String var_inequalities) {
+    // input will be like X1>=0, X2 ==
+
+    // we remove the spaces then group using REGEX
+    // group one is the variable name Xi
+    // group two is the type and group 3 is always = 0
     var_inequalities = var_inequalities.replaceAll(" ", "");
     String[] splitted_details = var_inequalities.split(",");
     Pattern pattern = Pattern.compile("^(x\\d+)(=|>=|<=)(\\d+)$");
@@ -115,23 +129,30 @@ public class SimplexSolver {
     for (String var : splitted_details) {
       matcher = pattern.matcher(var);
       if (matcher.find()) {
+        // we load the variable with their data
         this.variable_inequalities.put(matcher.group(1), matcher.group(2));
       }
     }
     System.out.println(this.variable_inequalities);
   }
 
+  // this parses the objective function same as a constraint
   private void parse_objective_function() {
     this.objective_function = this.objective_function.replaceAll(" ", "");
     Pattern pattern = Pattern.compile("([+-]?\\d*\\.?\\d*)(x(\\d+))?");
     Matcher matcher;
-    HashMap<String, String> temp = new HashMap<>(this.variable_inequalities);
+    HashMap<String, String> temp = new HashMap<>(this.variable_inequalities); // we will need the states to iterate &
+                                                                              // delete and we need a copy of the
+                                                                              // variable states to do so
     int number_of_variables = 0;
     for (Map.Entry<String, String> entry : temp.entrySet()) {
       String Key = entry.getKey();
       String inequality = entry.getValue();
 
       if (inequality.equalsIgnoreCase("=")) {
+        // we need to know the number of variables we initially have in the system
+        // before the addition of slack or surplus
+        // we switch any unrestricted with two restricted sub variables
         number_of_variables++;
         this.variable_inequalities.remove(Key);
         this.variable_inequalities.put(Key + "_0", ">=");
@@ -148,7 +169,8 @@ public class SimplexSolver {
       matcher = pattern.matcher(var);
       if (matcher.find()) {
         int initial_index = Integer.parseInt(matcher.group(3));
-
+        // the offset is used as we dont know before the algorithm runs how many
+        // unrestricted variables we will have
         if (unrestricted_token.contains(matcher.group(2))) {
           this.objective_function_arr[initial_index - 1 + offset] = Double.parseDouble(matcher.group(1));
           variable_indeces.put(matcher.group(2) + "_0", initial_index - 1 + offset);
@@ -167,6 +189,7 @@ public class SimplexSolver {
 
   }
 
+  // just to print the constraints
   public void show_sorted() throws Exception {
     this.variable_inequalities = new TreeMap<>(this.variable_inequalities);
     System.out.println(this.variable_inequalities);
@@ -175,6 +198,7 @@ public class SimplexSolver {
     }
   }
 
+  // just to show the matrix we are building
   public void matrix_form() throws Exception {
     ArrayList<Map<String, Double>> rows = new ArrayList<>();
 
@@ -194,6 +218,8 @@ public class SimplexSolver {
           variable_indeces.put(key, variable_indeces.size());
         }
         if (key.startsWith("S_") || key.startsWith("A_")) {
+          // we know that at the start the initial solution , all basic variables are
+          // slack and artificial variables
           this.basic_variables[idx] = key;
 
         }
@@ -207,6 +233,7 @@ public class SimplexSolver {
     for (int i = 0; i < this.objective_function_arr.length; i++) {
       double coeff = this.objective_function_arr[i];
       if (this.problem_Type == Type.MIN) {
+        // we convert the min problem to a max problem
         coeff = coeff * -1;
       }
       this.z_row[i] = coeff;
@@ -222,6 +249,8 @@ public class SimplexSolver {
         Double value = entry.getValue();
 
         if (!key.equalsIgnoreCase("b")) {
+          // we put each coeffecient in the correct index for each constraint and if we
+          // have b value we put it in the result array
           int inner_index = this.variable_indeces.get(key);
           this.operation_Matrix[index][inner_index] = value;
         } else
@@ -240,6 +269,7 @@ public class SimplexSolver {
     }
   }
 
+  // returns a new artificial variable
   protected String getNewArtificalID() {
     this.method = Method.twoPhase;
     String var = "A_" + Integer.toString(this.A);
@@ -249,10 +279,12 @@ public class SimplexSolver {
 
   }
 
+  // returnt new surplus
   protected String getNewSurPlusID() {
     return "E_" + Integer.toString(this.A++);
   }
 
+  // returns new slack
   protected String getNewSlackID() {
     return "S_" + Integer.toString(this.S++);
   }
@@ -260,70 +292,85 @@ public class SimplexSolver {
   public double[][] getOperation_Matrix() {
     return this.operation_Matrix;
   }
-  public double[][] solve()throws  Exception{
+
+  // this isnt complete we still need to check for unboundness and some conditions
+  // i think
+  public double[][] solve() throws Exception {
     /*
-    if we have artificial variables we make an instanse of standard solver
-    MIN z = Artificial
-    double[][] -->  see basic variables and zero out the below Z
-    // modify stanrdard solver to solve the new double[][]
-    */
-   if(this.method == Method.twoPhase){
-   double[] minimize_phase_one = new double[this.variable_indeces.size()];
-   Arrays.fill(minimize_phase_one, 0);
-    int artifical_variables_count =0;
-   for(Map.Entry<String,Integer> entry : this.variable_indeces.entrySet()){
-      String key = entry.getKey();
-      Integer value = entry.getValue();
-      if(key.contains("A")){
-        minimize_phase_one[value] = -1;
-        artifical_variables_count++;
-      }
-   }
-   StandardSimplexSolver child_solver = get_child(minimize_phase_one,minimize_phase_one);
-   child_solver.solveStandard();
-   double[][] result_mat = child_solver.operation_Matrix;
-   for(double[] x: result_mat){
-    for(double i : x){
-      System.out.print(i+" ");
-    }
-    System.out.println();
-   }
-   double[] result_vec = child_solver.result_arr; 
-   for(double i : result_vec){
-    System.out.print(i+" ");
-   }
-   int rows = this.constraints.size();
-   int columns = this.variable_indeces.size();
-    double[][] phase_two_matrix = new double[rows][columns];
+     * if we have artificial variables we make an instanse of standard solver
+     * MIN z = Artificial
+     * double[][] --> see basic variables and zero out the below Z
+     * // modify stanrdard solver to solve the new double[][]
+     */
+    // first we see which method are we
+    if (this.method == Method.twoPhase) {
 
-    for(Map.Entry<String,Integer> entry : this.variable_indeces.entrySet()){
-      String key = entry.getKey();
-      Integer index = entry.getValue();
+      // we build the minimize function for the artificial variables
 
-      if(key.contains("A")) continue;
-      for(int i=0;i<rows;i++){
-        phase_two_matrix[i][index] = result_mat[i][index];
+      double[] minimize_phase_one = new double[this.variable_indeces.size()];
+      Arrays.fill(minimize_phase_one, 0);
+
+      for (Map.Entry<String, Integer> entry : this.variable_indeces.entrySet()) {
+        // we see if the key is an A then it is an artificial and we add it to the the
+        // minimization function in its correct place
+        String key = entry.getKey();
+        Integer value = entry.getValue();
+        if (key.contains("A")) {
+          minimize_phase_one[value] = -1;
+        }
       }
-    }
-    System.out.println();
-    for(double[] x: phase_two_matrix){
-      for(double i : x){
-        System.out.print(i+" ");
+      // my child solver goes to solve the problem for me
+      StandardSimplexSolver child_solver = get_child(minimize_phase_one, minimize_phase_one);
+      child_solver.solveStandard();
+      // we take the result matrix it produced
+      double[][] result_mat = child_solver.operation_Matrix;
+      for (double[] x : result_mat) {
+        for (double i : x) {
+          System.out.print(i + " ");
+        }
+        System.out.println();
+      }
+      // we takee the result vector and print it for debugging
+      double[] result_vec = child_solver.result_arr;
+      for (double i : result_vec) {
+        System.out.print(i + " ");
+      }
+      // we build the new matrix that will be used in the phase 2 aka without the
+      // artificial variables
+      int rows = this.constraints.size();
+      int columns = this.variable_indeces.size();
+      double[][] phase_two_matrix = new double[rows][columns];
+
+      for (Map.Entry<String, Integer> entry : this.variable_indeces.entrySet()) {
+        String key = entry.getKey();
+        Integer index = entry.getValue();
+
+        if (key.contains("A"))
+          continue;
+        for (int i = 0; i < rows; i++) {
+          phase_two_matrix[i][index] = result_mat[i][index];
+        }
       }
       System.out.println();
-     }
-     child_solver.z_row = this.z_row;
-     child_solver.operation_Matrix = phase_two_matrix;
-     child_solver.objective_function_arr = this.objective_function_arr;
-     child_solver.solveStandard();
-     double[][] final_mat = child_solver.operation_Matrix;
-     for(double[] x: final_mat){
-      for(double i : x){
-        System.out.print(i+" ");
+      for (double[] x : phase_two_matrix) {
+        for (double i : x) {
+          System.out.print(i + " ");
+        }
+        System.out.println();
       }
-      System.out.println();
-     }
+      // we call the child to solve the problem of phase 2
+      child_solver.z_row = this.z_row;
+      child_solver.operation_Matrix = phase_two_matrix;
+      child_solver.objective_function_arr = this.objective_function_arr;
+      child_solver.solveStandard();
+      double[][] final_mat = child_solver.operation_Matrix;
+      for (double[] x : final_mat) {
+        for (double i : x) {
+          System.out.print(i + " ");
+        }
+        System.out.println();
+      }
+    }
+    return null;
   }
-  return null;
-  } 
 }

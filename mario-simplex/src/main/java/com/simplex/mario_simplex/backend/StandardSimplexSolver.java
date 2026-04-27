@@ -1,4 +1,5 @@
 package com.simplex.mario_simplex.backend;
+
 import java.util.Map;
 
 public class StandardSimplexSolver extends SimplexSolver {
@@ -12,7 +13,7 @@ public class StandardSimplexSolver extends SimplexSolver {
     super(conditions);
 
   }
-  
+
   public StandardSimplexSolver() {
 
   }
@@ -38,11 +39,13 @@ public class StandardSimplexSolver extends SimplexSolver {
         int var_idx = this.variable_indeces.get(basic_var);
 
         double cb = this.z_row[var_idx];
-
+        // this calculates the summation of Ci * aji for the basic variable
+        // this is done to insure that the objective function where basic variables
+        // columns is are zeroed out
         zj += cb * this.operation_Matrix[j][i];
 
       }
-
+      // calculates the Z which will go start the simplex algorithm
       cj_zj[i] = this.z_row[i] - zj;
 
     }
@@ -50,7 +53,8 @@ public class StandardSimplexSolver extends SimplexSolver {
     this.z_row = cj_zj;
 
     while (true) {
-
+      // we find the maximum columns that has the largest Z factor and that will be
+      // our entering variable
       int max_Pos_idx = 0;
 
       for (int i = 1; i < cols; i++) {
@@ -74,13 +78,14 @@ public class StandardSimplexSolver extends SimplexSolver {
       int out_idx = 0;
 
       double out_value = Integer.MAX_VALUE;
-
+      // this loop is for carrying out the ratio test and determine the smallest ratio
+      // as our leaving variable
       for (int i = 0; i < rows; i++) {
 
         double pivot_elemnt = this.operation_Matrix[i][max_Pos_idx];
 
         if (pivot_elemnt > 0) {
-
+          // we keep track of the smallest ratio and its index
           double ratio = this.result_arr[i] / pivot_elemnt;
 
           if (ratio < out_value) {
@@ -94,7 +99,7 @@ public class StandardSimplexSolver extends SimplexSolver {
         }
 
       }
-
+      // if all pivot elements are zeros we throw an exception
       if (out_value == Integer.MAX_VALUE) {
         // throw Exception
         break;
@@ -104,7 +109,7 @@ public class StandardSimplexSolver extends SimplexSolver {
       // swap base
 
       String entering_var_name = "";
-
+      // we get the name of the of the entering variable
       for (Map.Entry<String, Integer> entry : this.variable_indeces.entrySet()) {
 
         if (entry.getValue() == max_Pos_idx) {
@@ -120,7 +125,7 @@ public class StandardSimplexSolver extends SimplexSolver {
       this.basic_variables[out_idx] = entering_var_name;
 
       // divide the matrix values and the result arr
-
+      // we normalize the row which will carry the gauss jordon
       double pivot_value = this.operation_Matrix[out_idx][max_Pos_idx];
 
       for (int i = 0; i < cols; i++) {
@@ -140,7 +145,7 @@ public class StandardSimplexSolver extends SimplexSolver {
         }
 
         double multipiler = this.operation_Matrix[i][max_Pos_idx];
-
+        // gauss jordon step
         for (int j = 0; j < cols; j++) {
 
           this.operation_Matrix[i][j] -= (multipiler * this.operation_Matrix[out_idx][j]);
@@ -150,7 +155,8 @@ public class StandardSimplexSolver extends SimplexSolver {
         this.result_arr[i] -= (multipiler * this.result_arr[out_idx]);
 
       }
-
+      // note that we only need the multiplier as multiply the row with it as the row
+      // is already normalized
       double z_multipiler = this.z_row[max_Pos_idx];
 
       for (int i = 0; i < cols; i++) {
@@ -187,6 +193,11 @@ public class StandardSimplexSolver extends SimplexSolver {
 
       // Print the variable's answer
       System.out.println(var_name + " = " + final_value);
+      // the below line calculates the result from the Z array as detailed the
+      // contributed to total profit
+      // this helps us as we are no longer worry when to multiply z with -1 and when
+      // to leave it as it is
+      // SMART ZUHAIR
 
       // Add its contribution to the total Profit (Z)
       // Note: We use the original objective array, so we don't worry about the
