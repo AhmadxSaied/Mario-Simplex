@@ -1,0 +1,92 @@
+import { computed, Component, signal, inject } from '@angular/core';
+import { BackendData } from '../../models/SendData';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Results } from '../../services/Results';
+
+@Component({
+  selector: 'app-solver-input',
+  imports: [CommonModule, FormsModule],
+  templateUrl: './solver-input.html',
+  styleUrl: './solver-input.css',
+})
+export class SolverInput {
+  private SimplexService = inject(Results);
+  isLoading = this.SimplexService.isLoading;
+  objectiveType = signal<'MAX' | 'MIN'>('MAX');
+  numVars = signal<number>(2);
+  ojbectiveFunction = signal<string>("");
+  objective = signal<number[]>([0, 0]);
+  constraints = signal<{ coefs: number[], sign: string, rhs: number }[]>([
+    { coefs: [0, 0], sign: '<=', rhs: 0 }
+  ]);
+  variableNames = computed(() =>
+    Array.from({ length: this.numVars() }, (_, i) => `x${i + 1}`)
+  );
+  updateVarCount(change: number) {
+    const newVal = this.numVars() + change;
+
+    // Keep it between 2 and 10 variables
+    if (newVal >= 2 && newVal <= 10) {
+      this.numVars.set(newVal);
+
+      // Resize the objective function array, keeping existing numbers if possible
+      this.objective.update(current => {
+        const arr = new Array(newVal).fill(0);
+        current.forEach((val, i) => { if (i < newVal) arr[i] = val; });
+        return arr;
+      });
+
+      // Resize every constraint array to match the new variable count
+      this.constraints.update(list => list.map(c => {
+        const newCoefs = new Array(newVal).fill(0);
+        c.coefs.forEach((val, i) => { if (i < newVal) newCoefs[i] = val; });
+        return { ...c, coefs: newCoefs };
+      }));
+    }
+  }
+
+  addConstraint() {
+    this.constraints.update(list => [
+      ...list,
+      { coefs: new Array(this.numVars()).fill(0), sign: '<=', rhs: 0 }
+    ]);
+  }
+
+  removeConstraint(index: number) {
+    this.constraints.update(list => list.filter((_, i) => i !== index));
+  }
+  solve() {
+    const objStr = this.formateEquations(this.objective());
+    const constraintsList = this.constraints().map(c => {
+      const leftSide = this.formateEquations(c.coefs);
+      return `${leftSide}${c.sign}${c.rhs}`
+    });
+    const payload: BackendData = {
+      objectiveType: this.objectiveType(),
+      objectiveFunction: objStr,
+      constraints: constraintsList
+    };
+    this.SimplexService.calculateSimplex(payload);
+  }
+
+  private formateEquations(coefs: number[]): string {
+    let equation = '';
+    coefs.forEach((coef, index) => {
+      if (coef == 0) return;
+      const varName = `x${index + 1}`;
+      const absCoef = Math.abs(coef);
+      if (coef > 0 && equation.length > 0) {
+        equation += "+";
+      }
+      else if (coef < 0) {
+        equation += "-"
+      }
+      if (absCoef !== 1) {
+        equation += absCoef;
+      }
+      equation += varName;
+    });
+    return equation.length > 0 ? equation : "0";
+  }
+}
