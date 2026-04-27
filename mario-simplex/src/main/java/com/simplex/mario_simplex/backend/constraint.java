@@ -1,8 +1,6 @@
 package com.simplex.mario_simplex.backend;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,6 +12,7 @@ public class constraint {
   private SimplexSolver simplex;
   private final Map<String, Boolean> used_variables;
   private final Map<String, Boolean> unrestriced;
+  protected Map<String,Double> f_hashed_constraint;
 
   public constraint(String constraint) {
     this.constraint_to_be_parsed = constraint;
@@ -123,16 +122,17 @@ public class constraint {
       String sVar = simplex.getNewSlackID();
       hashed_constraint.put(sVar, 1.0);
     }
-    if (constraint_type.equalsIgnoreCase(">=")) {
+    else if (constraint_type.equalsIgnoreCase(">=")) {
       String aVar = simplex.getNewArtificalID();
       String eVar = simplex.getNewSurPlusID();
       hashed_constraint.put(eVar, -1.0);
       hashed_constraint.put(aVar, 1.0);
     }
-    if (constraint_type.equalsIgnoreCase("=")) {
+    else if (constraint_type.equalsIgnoreCase("=")) {
       String aVar = simplex.getNewArtificalID();
       hashed_constraint.put(aVar, 1.0);
     }
+    this.f_hashed_constraint = hashed_constraint;
     return hashed_constraint;
 
   }

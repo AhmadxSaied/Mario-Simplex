@@ -12,6 +12,10 @@ public class StandardSimplexSolver extends SimplexSolver {
     super(conditions);
 
   }
+  
+  public StandardSimplexSolver() {
+
+  }
 
   public void solveStandard() {
 
@@ -92,7 +96,7 @@ public class StandardSimplexSolver extends SimplexSolver {
       }
 
       if (out_value == Integer.MAX_VALUE) {
-
+        // throw Exception
         break;
 
       }
