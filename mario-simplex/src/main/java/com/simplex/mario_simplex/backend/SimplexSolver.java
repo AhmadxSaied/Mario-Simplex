@@ -34,12 +34,12 @@ public class SimplexSolver {
     // when we encounter >=0 we continue normally and when we find unrestricted we
     // swap it with 2 inside the constraint
     // we will then need to form the matrix that includes the slacks
-    private enum Type {
+    protected enum Type {
         MAX,
         MIN
     }
 
-    private enum Method {
+    protected enum Method {
         twoPhase,
         standard
     }
@@ -57,11 +57,13 @@ public class SimplexSolver {
     protected double[][] operation_Matrix; // hold the matrix that we will operate on and change
     private String objective_function; // hold the objective function as a string // will be tokenized
     protected double[] objective_function_arr; // hold the objective function as a coeffecient array
-    protected double[] result_arr; // hold the z function that is used inside the simplex solver
+    protected double[] result_arr; // hold the b
     private Set<String> unrestricted_token; // hold the unrestriced variables with state == unrestricted
     protected String[] basic_variables; // holds what basic variables is inside which row
     protected double[] z_row;
     protected String phase = null;
+    protected String state;
+
     // we assume that all problems we solve are maximization problems
     public SimplexSolver(String variable_inequalities) {
         this.constraints = new ArrayList<>();
@@ -70,6 +72,7 @@ public class SimplexSolver {
         this.method = Method.standard;
         this.unrestricted_token = new HashSet<>();
         this.variable_indeces = new HashMap<>();
+        this.state = "OPTIMAL";
         parse_variable_inequalities(variable_inequalities);
     }
 
@@ -87,6 +90,7 @@ public class SimplexSolver {
         child_solver.objective_function_arr = objFunction;
         child_solver.constraints = this.constraints;
         child_solver.phase = this.phase;
+        child_solver.state = "OPTIMAL";
         return child_solver;
     }
 
@@ -147,7 +151,8 @@ public class SimplexSolver {
         this.objective_function = this.objective_function.replaceAll(" ", "");
         Pattern pattern = Pattern.compile("([+-]?\\d*\\.?\\d*)(x(\\d+))?");
         Matcher matcher;
-        HashMap<String, String> temp = new HashMap<>(this.variable_inequalities); // we will need the states to iterate &
+        HashMap<String, String> temp = new HashMap<>(this.variable_inequalities); // we will need the states to iterate
+                                                                                  // &
         // delete and we need a copy of the
         // variable states to do so
         int number_of_variables = 0;
@@ -309,15 +314,20 @@ public class SimplexSolver {
     // i think
     public List<SimplexResult> solve() throws Exception {
         /*
-     * if we have artificial variables we make an instanse of standard solver
-     * MIN z = Artificial
-     * double[][] --> see basic variables and zero out the below Z
-     * // modify stanrdard solver to solve the new double[][]
+         * if we have artificial variables we make an instanse of standard solver
+         * MIN z = Artificial
+         * double[][] --> see basic variables and zero out the below Z
+         * // modify stanrdard solver to solve the new double[][]
          */
         // first we see which method are we
+        boolean is_two_phase = false;
+        this.phase = "Standard";
+        StandardSimplexSolver child_solver = get_child(this.objective_function_arr, this.z_row);
         List<SimplexResult> results = new ArrayList<>();
         if (this.method == Method.twoPhase) {
+            is_two_phase = true;
             this.phase = "Phase 1";
+            child_solver.phase = this.phase;
             // we build the minimize function for the artificial variables
             double[] minimize_phase_one = new double[this.variable_indeces.size()];
             Arrays.fill(minimize_phase_one, 0);
@@ -332,7 +342,8 @@ public class SimplexSolver {
                 }
             }
             // my child solver goes to solve the problem for me
-            StandardSimplexSolver child_solver = get_child(minimize_phase_one, minimize_phase_one);
+            child_solver.z_row = minimize_phase_one;
+            child_solver.objective_function_arr = minimize_phase_one;
             results.addAll(child_solver.solveStandard());
             // we take the result matrix it produced
             double[][] result_mat = child_solver.operation_Matrix;
@@ -371,31 +382,101 @@ public class SimplexSolver {
                 }
                 System.out.println();
             }
+            if (child_solver.infeasibility_check_phase_one()) {
+                this.state = "INFEASIBLE";
+                System.out.println("\n\n\n\n" + this.state + "\n\n\n\n");
+                return results;
+            }
             // we call the child to solve the problem of phase 2
             this.phase = "Phase 2";
             child_solver.z_row = this.z_row;
             child_solver.operation_Matrix = phase_two_matrix;
             child_solver.objective_function_arr = this.objective_function_arr;
             child_solver.phase = this.phase;
-            results.addAll(child_solver.solveStandard());
-            double[][] final_mat = child_solver.operation_Matrix;
-            for (double[] x : final_mat) {
-                for (double i : x) {
-                    System.out.print(i + " ");
-                }
-                System.out.println();
-            }
-        } else {
-            StandardSimplexSolver child_solver = get_child(this.objective_function_arr, this.z_row);
-            results.addAll(child_solver.solveStandard());
-            double[][] final_mat = child_solver.operation_Matrix;
-            for (double[] x : final_mat) {
-                for (double i : x) {
-                    System.out.print(i + " ");
-                }
-                System.out.println();
-            }
         }
+        // else {
+
+        // results.addAll(child_solver.solveStandard());
+        // double[][] final_mat = child_solver.operation_Matrix;
+        // for (double[] x : final_mat) {
+        // for (double i : x) {
+        // System.out.print(i + " ");
+        // }
+        // System.out.println();
+        // }
+        // }
+        if (!is_two_phase)
+            this.phase = "Standard";
+        results.addAll(child_solver.solveStandard());
+        double[][] final_mat = child_solver.operation_Matrix;
+        for (double[] x : final_mat) {
+            for (double i : x) {
+                System.out.print(i + " ");
+            }
+            System.out.println();
+        }
+        this.state = child_solver.state;
+        if (child_solver.alternative_solution_check()) {
+            this.state = "INFINITE_SOLUTION";
+        }
+        if (degenerance_check()) {
+            this.state = "DEGENERATE_SOLUTION";
+        }
+        System.out.println("\n\n\n\n" + this.state + "\n\n\n\n");
         return results;
     }
+
+    // this need to be called after phase 1 is done
+    protected boolean infeasibility_check_phase_one() {
+        // we need to check if the artificial variable we added has a positive value if
+        // so the solution is infeasible
+        for (int i = 0; i < this.basic_variables.length; i++) {
+            if (this.basic_variables[i].contains("A")) {
+                if (this.result_arr[i] > 0) {
+                    // true indicating infeasibility
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // this is called after the phase 2 simplex is calculated
+    protected boolean alternative_solution_check() {
+        for (Map.Entry<String, Integer> var : this.variable_indeces.entrySet()) {
+            String var_name = var.getKey();
+
+            if (var_name.contains("A"))
+                continue;
+
+            Integer index = var.getValue();
+            if (this.z_row[index] == 0) {
+                boolean safe = false;
+                for (String basic_val : this.basic_variables) {
+                    if (basic_val.equalsIgnoreCase(var_name)) {
+                        safe = true;
+                    }
+                }
+                if (!safe) {
+                    // if true is returned this indicates that this is not a basic variable and the
+                    // Z is equal Zero and therefore we have infinite solutios
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    protected boolean degenerance_check() {
+
+        for (int i = 0; i < this.basic_variables.length; i++) {
+            if (z_row[i] == 0) {
+                // degenerance check returns true if a basic variable value is equal to zero
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 }

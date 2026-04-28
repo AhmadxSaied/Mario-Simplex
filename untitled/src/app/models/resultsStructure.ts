@@ -7,7 +7,9 @@ export interface SimplexResults {
   PivotCol: number;
   RatioResults: number[];
   z_row: number[];
-  Type:"Phase 1" | "Phase 2" | null;
+  Type:"Phase 1" | "Phase 2" | "Standard" | null;
+  state?: "OPTIMAL" | "INFEASIBLE" | "INFINITE_SOLUTION" 
+  | "DEGENERATE_SOLUTION" | "UNBOUNDED_SOLUTION" | null;
 }
 export const MOCK_RESULTS: SimplexResults[] = [
   {
