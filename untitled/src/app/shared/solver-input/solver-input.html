@@ -29,13 +29,23 @@
         <div class="flex items-center space-x-2">
           <input type="number"
                  [(ngModel)]="objective()[$index]"
-                 class="w-24 bg-black text-white text-center font-mario text-sm py-3 border-4 border-slate-600 shadow-[4px_4px_0_0_#000] focus:border-green-500 focus:shadow-[4px_4px_0_0_#22c55e] outline-none transition-none">
+                 class="w-24 bg-black text-white text-center font-mario text-sm py-3 border-4 border-slate-600 shadow-[4px_4px_0_0_#000] focus:border-green-500 focus:shadow-[4px_4px_0_0_#22c55e] outline-none transition-none"
+                 [class.!border-red-400]="hasObjectiveError()"
+                 [class.!focus:border-red-500]="hasObjectiveError()"
+          >
           <span class=" pl-1 text-emerald-400 font-mario text-xl">{{ varName }}</span>
           @if ($index < numVars() - 1) { <span class="text-slate-500 font-bold text-xl">+</span> }
         </div>
       }
     </div>
   </div>
+    @if (hasObjectiveError()) {
+      <div class="w-full flex justify-center mb-6">
+        <div class="error-msg font-mario animate-pulse w-fit text-sm">
+          ERROR: OBJECTIVE FUNCTION CANNOT BE ALL ZEROS!
+        </div>
+      </div>
+    }
 
   <div class="mb-8">
     <div class="flex justify-between items-end mb-4">

@@ -2,3 +2,16 @@
 .font-mario{
   font-family:"Press Start 2P", system-ui, sans-serif;
 }
+
+@layer components {
+  /* The Red Error Box */
+  .error-msg {
+    @apply bg-red-600 border-4 border-red-900 text-white shadow-[6px_6px_0_0_rgba(100,0,0,1)] px-4 py-2 tracking-widest;
+  }
+
+  /* The Green Success Box */
+  .success-msg {
+    @apply bg-green-500 border-4 border-white text-black shadow-[6px_6px_0_0_rgba(255,255,255,0.8)] px-4 py-2  tracking-widest;
+  }
+}
+

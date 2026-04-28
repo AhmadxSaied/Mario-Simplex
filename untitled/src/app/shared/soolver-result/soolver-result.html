@@ -53,21 +53,22 @@
        [class.opacity-100]="progressPercentage() === 100"
        [class.scale-100]="progressPercentage() === 100">
 
-    <div class="bg-green-500 border-4 border-white px-6 py-4 shadow-[6px_6px_0_0_rgba(255,255,255,0.8)] flex items-center space-x-4 animate-pulse">
-
-      <span class="text-3xl drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">⭐</span>
+   <div class="flex items-center space-x-4 animate-pulse"
+     [class.error-msg]="currentStep().State === 'infeasible'"
+     [class.success-msg]="currentStep().State !== 'Infeasible'">
+      <span class="text-3xl drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{{currentStep().SpecialCase === 'Infeasible' ? 💀' : '⭐' }}</span>
 
       <span class="text-black font-mario text-lg md:text-2xl pt-1 text-center leading-relaxed">
-      OPTIMAL SOLUTION REACHED
+      {{ currentStep().State === 'Infeasible' ? 'NO SOLUTION' : 'OPTIMAL SOLUTION REACHED' }}
     </span>
 
-      <span class="text-3xl drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">⭐</span>
+      <span class="text-3xl drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{{currentStep().State === 'Infeasible' ?'💀' : '⭐' }}</span>
 
     </div>
 
   </div>
   @if(phase() != null){
-  <div class="bg-green-500 border-4 inline-flex border-white px-6 py-4 shadow-[6px_6px_0_0_rgba(255,255,255,0.8)]  items-center   font-mario ">
+  <div  class="bg-green-500 border-4 inline-flex border-white px-6 py-4 shadow-[6px_6px_0_0_rgba(255,255,255,0.8)]  items-center   font-mario ">
     {{phase()}}
   </div>
   }
@@ -153,4 +154,13 @@
       }
     </tbody>
   </table>
+  @if(progressPercentage() === 100){
+  <div class="fixed z-50 animate-bounce">
+    <div [class.error-msg] = "currentStep().State  === 'Infeasible'"
+      [class.success-msg] = "currentStep().State !== 'Infeasible'"
+    >
+      {{currentStep().State}}
+    </div>
+  </div>
+  }
 </div>

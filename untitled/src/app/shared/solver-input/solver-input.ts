@@ -13,13 +13,14 @@ import { Results } from '../../services/Results';
 export class SolverInput {
   private SimplexService = inject(Results);
   isLoading = this.SimplexService.isLoading;
-  variableBounds = signal<string[]>(['>= 0','>= 0']);
+  variableBounds = signal<string[]>(['>= 0', '>= 0']);
   objectiveType = signal<'MAX' | 'MIN'>('MAX');
   numVars = signal<number>(2);
   objective = signal<number[]>([0, 0]);
   constraints = signal<{ coefs: number[], sign: string, rhs: number }[]>([
     { coefs: [0, 0], sign: '<=', rhs: 0 }
   ]);
+  hasObjectiveError = signal<boolean>(false);
   variableNames = computed(() =>
     Array.from({ length: this.numVars() }, (_, i) => `x${i + 1}`)
   );
@@ -64,19 +65,25 @@ export class SolverInput {
     this.constraints.update(list => list.filter((_, i) => i !== index));
   }
   solve() {
+    const allZeros = this.objective().every(val => val === 0);
+    if (allZeros) {
+      this.hasObjectiveError.set(true);
+      return;
+    }
+    this.hasObjectiveError.set(false);
     const objStr = this.formateEquations(this.objective());
     const constraintsList = this.constraints().map(c => {
       const leftSide = this.formateEquations(c.coefs);
       return `${leftSide}${c.sign}${c.rhs}`
     });
-    const boundsList = this.variableBounds().map((bound,index) => {
-      return `x${index+1} ${bound}`
+    const boundsList = this.variableBounds().map((bound, index) => {
+      return `x${index + 1} ${bound}`
     });
     const payload: BackendData = {
       objectiveType: this.objectiveType(),
       objectiveFunction: objStr,
       constraints: constraintsList,
-      bounds:boundsList
+      bounds: boundsList
     };
     console.log(payload);
 
