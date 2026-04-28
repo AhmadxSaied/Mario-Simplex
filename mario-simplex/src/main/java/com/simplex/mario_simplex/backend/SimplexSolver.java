@@ -61,7 +61,7 @@ public class SimplexSolver {
     private Set<String> unrestricted_token; // hold the unrestriced variables with state == unrestricted
     protected String[] basic_variables; // holds what basic variables is inside which row
     protected double[] z_row;
-
+    protected String phase = null;
     // we assume that all problems we solve are maximization problems
     public SimplexSolver(String variable_inequalities) {
         this.constraints = new ArrayList<>();
@@ -86,6 +86,7 @@ public class SimplexSolver {
         child_solver.variable_indeces = this.variable_indeces;
         child_solver.objective_function_arr = objFunction;
         child_solver.constraints = this.constraints;
+        child_solver.phase = this.phase;
         return child_solver;
     }
 
@@ -316,7 +317,7 @@ public class SimplexSolver {
         // first we see which method are we
         List<SimplexResult> results = new ArrayList<>();
         if (this.method == Method.twoPhase) {
-
+            this.phase = "Phase 1";
             // we build the minimize function for the artificial variables
             double[] minimize_phase_one = new double[this.variable_indeces.size()];
             Arrays.fill(minimize_phase_one, 0);
@@ -371,9 +372,11 @@ public class SimplexSolver {
                 System.out.println();
             }
             // we call the child to solve the problem of phase 2
+            this.phase = "Phase 2";
             child_solver.z_row = this.z_row;
             child_solver.operation_Matrix = phase_two_matrix;
             child_solver.objective_function_arr = this.objective_function_arr;
+            child_solver.phase = this.phase;
             results.addAll(child_solver.solveStandard());
             double[][] final_mat = child_solver.operation_Matrix;
             for (double[] x : final_mat) {

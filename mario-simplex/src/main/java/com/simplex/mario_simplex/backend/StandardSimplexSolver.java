@@ -1,6 +1,7 @@
 package com.simplex.mario_simplex.backend;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -108,6 +109,45 @@ public class StandardSimplexSolver extends SimplexSolver {
                 break;
 
             }
+            double[][] clonedMatrix = new double[rows][cols];
+            for (int i = 0; i < rows; i++) {
+                clonedMatrix[i] = this.operation_Matrix[i].clone();
+            }
+            // Calculate current Z for the snapshot
+            double current_z = 0.0;
+            for (int j = 0; j < this.objective_function_arr.length; j++) {
+                String var_name = "";
+                for (Map.Entry<String, Integer> entry : this.variable_indeces.entrySet()) {
+                    if (entry.getValue() == j) { var_name = entry.getKey(); break; }
+                }
+                double final_value = 0.0;
+                for (int i = 0; i < rows; i++) {
+                    if (this.basic_variables[i].equals(var_name)) {
+                        final_value = this.result_arr[i]; break;
+                    }
+                }
+                current_z += (this.objective_function_arr[j] * final_value);
+            }
+
+            double[] z = Arrays.copyOf(this.z_row, this.z_row.length + 1);
+            z[z.length - 1] = current_z;
+            String[] variableNames = new String[this.variable_indeces.size()];
+            for (Map.Entry<String, Integer> entry : this.variable_indeces.entrySet()) {
+                variableNames[entry.getValue()] = entry.getKey();
+            }
+
+            // ADD SNAPSHOT TO RESULTS
+            results.add(new SimplexResult(
+                    variableNames.clone(),
+                    clonedMatrix,
+                    this.basic_variables.clone(),
+                    this.result_arr.clone(),
+                    out_idx,
+                    max_Pos_idx,
+                    ratio_results.clone(),
+                    z.clone(),
+                    this.phase)
+            );
 
             // swap base
             String entering_var_name = "";
@@ -166,27 +206,13 @@ public class StandardSimplexSolver extends SimplexSolver {
                 this.z_row[i] -= (z_multipiler * this.operation_Matrix[out_idx][i]);
 
             }
-
-            String[] variableNames = new String[this.variable_indeces.size()];
-            for (Map.Entry<String, Integer> entry : this.variable_indeces.entrySet()) {
-                variableNames[entry.getValue()] = entry.getKey();
-            }
-
-            results.add(new SimplexResult(
-                    variableNames,
-                    this.operation_Matrix,
-                    this.basic_variables,
-                    this.result_arr,
-                    out_idx,
-                    max_Pos_idx,
-                    ratio_results,
-                    this.z_row,
-                    "dont worry")
-            );
         }
         System.out.println("\n--- Optimal Solution Found ---");
         double optimal_z = 0.0;
-
+        String[] variableNames = new String[this.variable_indeces.size()];
+        for(Map.Entry<String,Integer> entry : this.variable_indeces.entrySet()){
+            variableNames[entry.getValue()] = entry.getKey();
+        }
         // Loop through your original variables (x1, x2, etc.)
         // We use the objective_function_arr size to ignore the Slack variables
         for (int j = 0; j < this.objective_function_arr.length; j++) {
@@ -224,6 +250,20 @@ public class StandardSimplexSolver extends SimplexSolver {
         }
 
         System.out.println("Optimal Z = " + optimal_z);
+        double[] final_z = Arrays.copyOf(this.z_row, this.z_row.length + 1);
+        final_z[final_z.length - 1] = optimal_z;
+        results.add(new SimplexResult(
+                variableNames.clone(),
+                this.operation_Matrix.clone(), // Use the deep copied matrix
+                this.basic_variables.clone(),
+                this.result_arr.clone(),
+                -1, // No more math!
+                -1, // No more math!
+                new double[0], // Empty ratios
+                final_z.clone(), // Now it exists!
+                this.phase
+        ));
+        System.out.println(this.phase);
         return results;
     }
 

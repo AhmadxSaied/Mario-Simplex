@@ -29,6 +29,7 @@ export class SoolverResult {
   pivotRow = computed(() => this.currentStep().PivotRow);
   pivotCol = computed(() => this.currentStep().PivotCol);
   z_row = computed(() => this.currentStep().z_row);
+  phase = computed(() => this.currentStep().Type);
   // Helper for the circles
   isPivot(rowIndex: number, colIndex: number): boolean {
     return rowIndex === this.pivotRow() && colIndex === this.pivotCol();
