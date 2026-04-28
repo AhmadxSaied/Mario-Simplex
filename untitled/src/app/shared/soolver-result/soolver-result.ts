@@ -28,7 +28,7 @@ export class SoolverResult {
   ratioResults = computed(() => this.currentStep().RatioResults);
   pivotRow = computed(() => this.currentStep().PivotRow);
   pivotCol = computed(() => this.currentStep().PivotCol);
-
+  z_row = computed(() => this.currentStep().z_row);
   // Helper for the circles
   isPivot(rowIndex: number, colIndex: number): boolean {
     return rowIndex === this.pivotRow() && colIndex === this.pivotCol();
@@ -38,19 +38,27 @@ export class SoolverResult {
 
   nextStep() {
     if (this.currentIndex() < this.steps().length - 1) {
-      this.currentIndex.update(index => index + 1);
+      this.currentIndex.update((index) => index + 1);
     }
   }
 
   prevStep() {
     if (this.currentIndex() > 0) {
-      this.currentIndex.update(index => index - 1);
+      this.currentIndex.update((index) => index - 1);
     }
   }
 
   progressPercentage = computed(() => {
     const totalSteps = this.steps().length;
-    return (this.currentIndex() + 1 / totalSteps) * 100;
+
+    // Safety check: If there are no steps, return 0%
+    if (totalSteps === 0) return 0;
+
+    // Safety check: If there is only 1 step total, it's instantly 100% done
+    if (totalSteps === 1) return 100;
+
+    // The Magic Math: (currentIndex / (totalSteps - 1)) * 100
+    return (this.currentIndex() / (totalSteps - 1)) * 100;
   });
   isInVar(colIndex: number) {
     return colIndex === this.pivotCol();

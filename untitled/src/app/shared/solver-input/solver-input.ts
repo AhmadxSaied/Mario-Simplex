@@ -79,6 +79,7 @@ export class SolverInput {
       bounds:boundsList
     };
     console.log(payload);
+
     this.SimplexService.calculateSimplex(payload);
   }
 

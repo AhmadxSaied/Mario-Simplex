@@ -179,7 +179,9 @@ public class StandardSimplexSolver extends SimplexSolver {
                     this.result_arr,
                     out_idx,
                     max_Pos_idx,
-                    ratio_results)
+                    ratio_results,
+                    this.z_row,
+                    "dont worry")
             );
         }
         System.out.println("\n--- Optimal Solution Found ---");

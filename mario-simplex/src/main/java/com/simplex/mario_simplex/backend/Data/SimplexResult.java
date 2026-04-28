@@ -25,11 +25,17 @@ public class SimplexResult {
     @JsonProperty("RatioResults")
     private double[] ratioResults;
 
+    @JsonProperty("z_row")
+    private double[] z_row;
+
+    @JsonProperty("Type")
+    private String Type;
+
     public SimplexResult() {
     }
 
     public SimplexResult(String[] variableNames, double[][] matrix, String[] basicVariables,
-            double[] bRow, int pivotRow, int pivotCol, double[] ratioResults) {
+            double[] bRow, int pivotRow, int pivotCol, double[] ratioResults,double[] z_row,String Type) {
         this.variableNames = variableNames;
         this.matrix = matrix;
         this.basicVariables = basicVariables;
@@ -37,6 +43,8 @@ public class SimplexResult {
         this.pivotRow = pivotRow;
         this.pivotCol = pivotCol;
         this.ratioResults = ratioResults;
+        this.Type = Type;
+        this.z_row = z_row;
     }
 
     // Getters and Setters
