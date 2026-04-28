@@ -1,9 +1,6 @@
 package com.simplex.mario_simplex.backend;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.simplex.mario_simplex.backend.Data.SimplexResult;
 
@@ -260,6 +257,20 @@ public class StandardSimplexSolver extends SimplexSolver {
         }
 
         System.out.println("Optimal Z = " + optimal_z);
+            // we need to check if the artificial variable we added has a positive value if
+            // so the solution is infeasible
+            if(infeasibility_check_phase_one()){
+                this.state = "INFEASIBLE";
+            }
+            if(this.state.equals("OPTIMAL")){
+                if(alternative_solution_check()){
+                    this.state = "INFINITE_SOLUTION";
+                }
+                else if (degenerance_check()) {
+                    this.state = "DEGENERATE_SOLUTION";
+                }
+            }
+
         double[] final_z = Arrays.copyOf(this.z_row, this.z_row.length + 1);
         final_z[final_z.length - 1] = optimal_z;
         results.add(new SimplexResult(

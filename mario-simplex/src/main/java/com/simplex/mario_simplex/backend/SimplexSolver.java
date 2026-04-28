@@ -393,18 +393,8 @@ public class SimplexSolver {
             child_solver.operation_Matrix = phase_two_matrix;
             child_solver.objective_function_arr = this.objective_function_arr;
             child_solver.phase = this.phase;
+            child_solver.state = this.state;
         }
-        // else {
-
-        // results.addAll(child_solver.solveStandard());
-        // double[][] final_mat = child_solver.operation_Matrix;
-        // for (double[] x : final_mat) {
-        // for (double i : x) {
-        // System.out.print(i + " ");
-        // }
-        // System.out.println();
-        // }
-        // }
         if (!is_two_phase)
             this.phase = "Standard";
         results.addAll(child_solver.solveStandard());

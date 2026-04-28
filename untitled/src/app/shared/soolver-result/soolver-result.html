@@ -53,16 +53,34 @@
        [class.opacity-100]="progressPercentage() === 100"
        [class.scale-100]="progressPercentage() === 100">
 
-   <div class="flex items-center space-x-4 animate-pulse"
-     [class.error-msg]="currentStep().State === 'infeasible'"
-     [class.success-msg]="currentStep().State !== 'Infeasible'">
-      <span class="text-3xl drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{{currentStep().SpecialCase === 'Infeasible' ? 💀' : '⭐' }}</span>
-
+   <div class="flex items-center justify-center space-x-4 animate-pulse"
+     [class.error-msg]="currentStep().state === 'INFEASIBLE'"
+     [class.success-msg]="currentStep().state !== 'INFEASIBLE'">
+    @if(currentStep().state === 'INFEASIBLE'){
+      <div class=" bottom-full  z-10 pointer-events-none">
+        <div class=" -scale-x-100 mr-1 transition-all duration-500 ease-out"
+             >
+          <img src="/assets/mario-pant.png" alt="Mario" class="h-12 w-12 object-contain  font-extrabold drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]" />
+        </div>
+      </div>
+    }
+    @else{
+      <span class="text-3xl drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{{currentStep().state === 'INFEASIBLE' ?'💀' : '⭐' }}</span>
+    }
       <span class="text-black font-mario text-lg md:text-2xl pt-1 text-center leading-relaxed">
-      {{ currentStep().State === 'Infeasible' ? 'NO SOLUTION' : 'OPTIMAL SOLUTION REACHED' }}
+      {{ currentStep().state === 'INFEASIBLE' ? 'NO SOLUTION' : 'OPTIMAL SOLUTION REACHED' }}
     </span>
-
-      <span class="text-3xl drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{{currentStep().State === 'Infeasible' ?'💀' : '⭐' }}</span>
+     @if(currentStep().state === 'INFEASIBLE'){
+       <div class=" bottom-full  z-10 pointer-events-none">
+         <div class="  ml-1 transition-all duration-500 ease-out"
+         >
+           <img src="/assets/mario-pant.png" alt="Mario" class="h-12 w-12 object-contain  font-extrabold drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]" />
+         </div>
+       </div>
+     }
+     @else{
+       <span class="text-3xl drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{{currentStep().state === 'INFEASIBLE' ?'💀' : '⭐' }}</span>
+     }
 
     </div>
 
@@ -155,11 +173,11 @@
     </tbody>
   </table>
   @if(progressPercentage() === 100){
-  <div class="fixed z-50 animate-bounce">
-    <div [class.error-msg] = "currentStep().State  === 'Infeasible'"
-      [class.success-msg] = "currentStep().State !== 'Infeasible'"
+  <div class="fixed bottom-4 left-4 z-50 animate-bounce ">
+    <div [class.error-msg] = "currentStep().state  === 'INFEASIBLE'"
+      [class.success-msg] = "currentStep().state !== 'INFEASIBLE'"
     >
-      {{currentStep().State}}
+      {{currentStep().state}}
     </div>
   </div>
   }
