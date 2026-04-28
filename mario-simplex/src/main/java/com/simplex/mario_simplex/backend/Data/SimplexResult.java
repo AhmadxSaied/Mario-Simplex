@@ -31,11 +31,15 @@ public class SimplexResult {
     @JsonProperty("Type")
     private String Type;
 
+    @JsonProperty("state")
+    private String state;
+
     public SimplexResult() {
     }
 
     public SimplexResult(String[] variableNames, double[][] matrix, String[] basicVariables,
-            double[] bRow, int pivotRow, int pivotCol, double[] ratioResults,double[] z_row,String Type) {
+            double[] bRow, int pivotRow, int pivotCol, double[] ratioResults, double[] z_row, String Type,
+            String state) {
         this.variableNames = variableNames;
         this.matrix = matrix;
         this.basicVariables = basicVariables;
@@ -45,6 +49,15 @@ public class SimplexResult {
         this.ratioResults = ratioResults;
         this.Type = Type;
         this.z_row = z_row;
+        this.state = state;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
     // Getters and Setters

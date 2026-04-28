@@ -103,9 +103,18 @@ public class StandardSimplexSolver extends SimplexSolver {
                 }
 
             }
+            // check that all ratios are equal
+            this.state = "DEGENERATE_SOLUTION";
+            for(int i = 0 ; i<rows;i++){
+                if(!(ratio_results[i] == out_value)){
+                    this.state = "OPTIMAL"; break;
+                }
+            }
             // if all pivot elements are zeros we throw an exception
             if (out_value == Integer.MAX_VALUE) {
                 // throw Exception
+                this.state = "UNBOUNDED_SOLUTION";
+                System.out.println(this.state);
                 break;
 
             }
@@ -146,7 +155,8 @@ public class StandardSimplexSolver extends SimplexSolver {
                     max_Pos_idx,
                     ratio_results.clone(),
                     z.clone(),
-                    this.phase)
+                    this.phase,
+                    this.state)
             );
 
             // swap base
@@ -261,7 +271,8 @@ public class StandardSimplexSolver extends SimplexSolver {
                 -1, // No more math!
                 new double[0], // Empty ratios
                 final_z.clone(), // Now it exists!
-                this.phase
+                this.phase,
+                this.state
         ));
         System.out.println(this.phase);
         return results;
