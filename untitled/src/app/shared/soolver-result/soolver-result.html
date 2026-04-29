@@ -135,24 +135,24 @@
           @for (value of row; track colIndex; let colIndex = $index) {
             <td class="relative p-3 bg-slate-800 rounded-lg text-white">
               <span [class.pivot-circle]="isPivot(rowIndex, colIndex)">
-                {{ value | number:'1.2-2' }}
+                {{ value | number:'1.1-3' }}
               </span>
             </td>
           }
 
           <td class="bg-slate-700/50 rounded-lg text-emerald-400 font-mono">
-            {{ b_row()[rowIndex] }}
+            {{ b_row()[rowIndex] | number : '1.1-3' }}
           </td>
 
           <td class="text-blue-400 font-bold px-4">
-            {{ ratioResults()[rowIndex] || '-' }}
+            {{( ratioResults()[rowIndex]| number : '1.1-3') || '-' }}
           </td>
         </tr>
 
       }
          <td class="font-bold text-slate-300">
             <span>
-              Zj-Cj
+              Cj-Zj
             </span>
 
           </td>

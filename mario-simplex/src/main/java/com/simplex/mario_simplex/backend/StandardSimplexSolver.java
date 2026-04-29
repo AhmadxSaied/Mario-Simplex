@@ -56,26 +56,27 @@ public class StandardSimplexSolver extends SimplexSolver {
         while (true) {
             // we find the maximum columns that has the largest Z factor and that will be
             // our entering variable
-            int max_Pos_idx = 0;
+            int max_Pos_idx = -1;
 
-            for (int i = 1; i < cols; i++) {
+            for (int i = 0; i < cols; i++) {
 
-                if (this.z_row[i] > this.z_row[max_Pos_idx]) {
+                if (this.z_row[i] > 0) {
 
                     max_Pos_idx = i;
+                    break;
 
                 }
 
             }
 
-            if (this.z_row[max_Pos_idx] <= 0) {
+            if (max_Pos_idx == -1) {
 
                 break;
 
             }
 
             // ratio test
-            int out_idx = 0;
+            int out_idx = -1;
             double[] ratio_results = new double[rows];
 
             double out_value = Integer.MAX_VALUE;
@@ -96,25 +97,43 @@ public class StandardSimplexSolver extends SimplexSolver {
                         out_value = ratio;
 
                     }
+                    // test if both the raios are the same we take the first one alphabetically to prevent infinite loop
+                    else if(ratio == out_value){
+                        String current_winner = this.basic_variables[out_idx];
+                        String challenger = this.basic_variables[i];
+
+                        // Compare their names. If the challenger's name comes first alphabetically
+                        // (e.g., "x1" comes before "x2", and "x" comes before "S"), it steals the spot!
+                        if (challenger.compareTo(current_winner) < 0) {
+                            out_idx = i;
+                            // out_value stays exactly the same, because it was a tie!
+                        }
+                    }
 
                 }
 
             }
-            // check that all ratios are equal
-            this.state = "DEGENERATE_SOLUTION";
-            for(int i = 0 ; i<rows;i++){
-                if(!(ratio_results[i] == out_value)){
-                    this.state = "OPTIMAL"; break;
-                }
-            }
-            // if all pivot elements are zeros we throw an exception
-            if (out_value == Integer.MAX_VALUE) {
+
+            if (out_idx == -1) {
                 // throw Exception
                 this.state = "UNBOUNDED_SOLUTION";
                 System.out.println(this.state);
                 break;
 
             }
+            // check that all ratios are equal
+            int tie_count=0;
+            for(int i = 0 ; i<rows;i++){
+                if (ratio_results[i] == out_value && this.operation_Matrix[i][max_Pos_idx] > 0) {
+                    tie_count++;
+                }
+            }
+            if (tie_count > 1) {
+                this.state = "DEGENERATE_SOLUTION";
+            } else {
+                this.state = "OPTIMAL";
+            }
+            // if all pivot elements are zeros we throw an exception
             double[][] clonedMatrix = new double[rows][cols];
             for (int i = 0; i < rows; i++) {
                 clonedMatrix[i] = this.operation_Matrix[i].clone();

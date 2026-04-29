@@ -93,18 +93,11 @@ export class SolverInput {
   private formateEquations(coefs: number[]): string {
     let equation = '';
     coefs.forEach((coef, index) => {
-      if (coef == 0) return;
       const varName = `x${index + 1}`;
-      const absCoef = Math.abs(coef);
-      if (coef > 0 && equation.length > 0) {
-        equation += "+";
+      if(index !== 0){
+        equation += '+';
       }
-      else if (coef < 0) {
-        equation += "-"
-      }
-      if (absCoef !== 1) {
-        equation += absCoef;
-      }
+     equation += coef;
       equation += varName;
     });
     return equation.length > 0 ? equation : "0";
