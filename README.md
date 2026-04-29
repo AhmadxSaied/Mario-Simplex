@@ -27,18 +27,18 @@ optimization logic more accessible and engaging.
 The command center for model definition. It features a custom expression 
 parser that translates string-based constraints into computational matrices.
 
-<img src="image.png" width="70%" style="display: block; margin-left: auto; margin-right: auto;">
-<div style="text-align: center; margin-top: 10px;">
-*Figure 1: Interface for model definition and objective configuration.*
+<div align="center">
+  <img src="image.png" width="70%">
+  <p><i>Figure 1: Description of the image here</i></p>
 </div>
 
 ### 🍄 Iterative Tableau Visualization
 Transparency is key. The solver renders every iteration of the 
 Gauss-Jordan elimination with real-time feedback on pivot selections.
 
-<img src="image1.png" width="70%" style="display: block; margin-left: auto; margin-right: auto;">
-<div style="text-align: center; margin-top: 10px;">
-*Figure 2: Matrix updates with pivot column/row highlighting.*
+<div align="center">
+  <img src="image1.png" width="70%">
+  <p><i>Figure 2: Matrix updates with pivot column/row highlighting.</i></p>
 </div>
 
 ---
