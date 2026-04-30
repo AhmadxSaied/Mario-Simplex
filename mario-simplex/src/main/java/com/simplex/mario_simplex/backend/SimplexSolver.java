@@ -406,10 +406,10 @@ public class SimplexSolver {
             System.out.println();
         }
         this.state = child_solver.state;
-        if (child_solver.alternative_solution_check()) {
+        if (child_solver.alternative_solution_check() && !this.state.equalsIgnoreCase("INFEASIBLE")) {
             this.state = "INFINITE_SOLUTION";
         }
-        if (degenerance_check()) {
+        if (degenerance_check() && !this.state.equalsIgnoreCase("INFEASIBLE")) {
             this.state = "DEGENERATE_SOLUTION";
         }
         System.out.println("\n\n\n\n" + this.state + "\n\n\n\n");
@@ -460,7 +460,9 @@ public class SimplexSolver {
     protected boolean degenerance_check() {
 
         for (int i = 0; i < this.basic_variables.length; i++) {
-            if (z_row[i] == 0) {
+            System.out.println(variable_indeces.get(this.basic_variables[i]));
+            System.out.println(this.basic_variables[i]);
+            if (result_arr[i] == 0) {
                 // degenerance check returns true if a basic variable value is equal to zero
                 return true;
             }

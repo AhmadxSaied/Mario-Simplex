@@ -1,6 +1,9 @@
 package com.simplex.mario_simplex.backend;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import com.simplex.mario_simplex.backend.Data.SimplexResult;
 
@@ -116,7 +119,9 @@ public class StandardSimplexSolver extends SimplexSolver {
 
             if (out_idx == -1) {
                 // throw Exception
+                if(!this.phase.equalsIgnoreCase("Phase 2")){
                 this.state = "UNBOUNDED_SOLUTION";
+                }
                 System.out.println(this.state);
                 break;
 
@@ -128,7 +133,7 @@ public class StandardSimplexSolver extends SimplexSolver {
                     tie_count++;
                 }
             }
-            if (tie_count > 1) {
+            if (tie_count > 1 && !this.phase.equalsIgnoreCase("Phase 2")) {
                 this.state = "DEGENERATE_SOLUTION";
             } else {
                 this.state = "OPTIMAL";
@@ -278,14 +283,14 @@ public class StandardSimplexSolver extends SimplexSolver {
         System.out.println("Optimal Z = " + optimal_z);
             // we need to check if the artificial variable we added has a positive value if
             // so the solution is infeasible
-            if(infeasibility_check_phase_one()){
+            if(infeasibility_check_phase_one() && this.phase.equalsIgnoreCase("Phase 1")){
                 this.state = "INFEASIBLE";
             }
             if(this.state.equals("OPTIMAL")){
-                if(alternative_solution_check()){
+                if(alternative_solution_check() && !this.phase.equalsIgnoreCase("Phase 1")){
                     this.state = "INFINITE_SOLUTION";
                 }
-                else if (degenerance_check()) {
+                else if (degenerance_check() && !this.phase.equalsIgnoreCase("Phase 1")) {
                     this.state = "DEGENERATE_SOLUTION";
                 }
             }
