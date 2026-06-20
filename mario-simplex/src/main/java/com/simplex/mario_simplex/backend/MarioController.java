@@ -20,11 +20,6 @@ public class MarioController {
     public ResponseEntity<List<SimplexResult>> solveSimplex(@RequestBody SimplexData data) {
         // solve the simplex problem using the data provided
         String boundStr = String.join(", ", data.getBounds());
-        // print all data for debugging
-        System.out.println(boundStr);
-        System.out.println(Arrays.toString(data.getConstraints()));
-        System.out.println(data.getObjectiveFunction());
-        System.out.println(data.getObjectiveType());
 
         SimplexSolver solver = new SimplexSolver(boundStr);
         if (data.getConstraints() != null) {

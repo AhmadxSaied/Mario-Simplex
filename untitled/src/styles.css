@@ -2,7 +2,9 @@
 .font-mario{
   font-family:"Press Start 2P", system-ui, sans-serif;
 }
-
+button{
+  cursor: pointer;
+}
 @layer components {
   /* The Red Error Box */
   .error-msg {

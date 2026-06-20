@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Results } from '../../services/Results';
 import { SimplexInputState, SimplexStateService } from '../SimplexStateService';
-
+import{App} from '../../app'
 @Component({
   selector: 'app-solver-input',
   imports: [CommonModule, FormsModule],
@@ -13,6 +13,7 @@ import { SimplexInputState, SimplexStateService } from '../SimplexStateService';
 })
 export class SolverInput implements OnInit {
   private SimplexService = inject(Results);
+  private SimplexState = inject(App);
   private PastService = inject(SimplexStateService);
   isLoading = this.SimplexService.isLoading;
   variableBounds = signal<string[]>(['>= 0', '>= 0']);
@@ -81,6 +82,7 @@ export class SolverInput implements OnInit {
     this.constraints.update((list) => list.filter((_, i) => i !== index));
   }
   solve() {
+    this.SimplexState.isLoading = true;
     const save: SimplexInputState = {
       numVars:this.numVars(),
       objectiveType: this.objectiveType(),
@@ -109,7 +111,6 @@ export class SolverInput implements OnInit {
       constraints: constraintsList,
       bounds: boundsList,
     };
-    console.log(payload);
 
     this.SimplexService.calculateSimplex(payload);
   }

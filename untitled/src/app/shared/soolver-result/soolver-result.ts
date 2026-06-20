@@ -30,7 +30,6 @@ export class SoolverResult {
   pivotCol = computed(() => this.currentStep().PivotCol);
   z_row = computed(() => this.currentStep().z_row);
   phase = computed(() => this.currentStep().Type);
-  // Helper for the circles
   isPivot(rowIndex: number, colIndex: number): boolean {
     return rowIndex === this.pivotRow() && colIndex === this.pivotCol();
   }
@@ -58,7 +57,6 @@ export class SoolverResult {
     // Safety check: If there is only 1 step total, it's instantly 100% done
     if (totalSteps === 1) return 100;
 
-    // The Magic Math: (currentIndex / (totalSteps - 1)) * 100
     return (this.currentIndex() / (totalSteps - 1)) * 100;
   });
   isInVar(colIndex: number) {

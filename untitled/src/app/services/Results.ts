@@ -20,7 +20,6 @@ export class Results {
       next: (Response) => {
         this.steps.set(Response);
         this.isLoading.set(false);
-        console.log(Response);
       },
       error: (err) => {
         console.error("error with backend ,", err);
